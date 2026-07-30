@@ -1,0 +1,6 @@
+{
+  "name": "Name Collector",
+  "description": "A simple web app that collects names and saves them to a CSV file.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
