@@ -39,6 +39,30 @@ async function startServer() {
     }
   });
 
+  // API Route to get the count
+  app.get('/api/names/count', async (req, res) => {
+    try {
+      const data = await fs.readFile(CSV_FILE_PATH, 'utf-8');
+      const lines = data.split('\n').filter(line => line.trim() !== '');
+      const count = Math.max(0, lines.length - 1); // Subtract header
+      res.json({ count });
+    } catch (error) {
+      console.error('Error getting count:', error);
+      res.status(500).json({ error: 'Failed to get count' });
+    }
+  });
+
+  // API Route to reset the CSV
+  app.delete('/api/names', async (req, res) => {
+    try {
+      await fs.writeFile(CSV_FILE_PATH, 'Name,Timestamp\n', 'utf-8');
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error resetting file:', error);
+      res.status(500).json({ error: 'Failed to reset file' });
+    }
+  });
+
   // API Route to download the CSV
   app.get('/api/names/download', (req, res) => {
     res.download(CSV_FILE_PATH, 'names.csv');

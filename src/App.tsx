@@ -3,12 +3,49 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState } from 'react';
-import { Download, Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Download, Send, CheckCircle2, AlertCircle, RefreshCw, Trash2 } from 'lucide-react';
 
 export default function App() {
   const [name, setName] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [count, setCount] = useState<number | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
+
+  const fetchCount = async () => {
+    try {
+      const response = await fetch('/api/names/count');
+      if (response.ok) {
+        const data = await response.json();
+        setCount(data.count);
+      }
+    } catch (error) {
+      console.error('Failed to fetch count', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCount();
+  }, []);
+
+  const handleReset = async () => {
+    if (!confirm('Are you sure you want to reset all records?')) return;
+    
+    setIsResetting(true);
+    try {
+      const response = await fetch('/api/names', { method: 'DELETE' });
+      if (response.ok) {
+        setCount(0);
+      } else {
+        alert('Failed to reset records.');
+      }
+    } catch (error) {
+      console.error('Failed to reset', error);
+      alert('Failed to reset records.');
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +65,7 @@ export default function App() {
 
       setStatus('success');
       setName('');
+      setCount((prev) => (prev !== null ? prev + 1 : 1));
       setTimeout(() => setStatus('idle'), 3000);
     } catch (error) {
       console.error('Error:', error);
@@ -41,6 +79,11 @@ export default function App() {
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Sign the Guestbook</h1>
           <p className="text-sm text-neutral-500">Enter your name to add it to the records.</p>
+          {count !== null && (
+            <div className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-neutral-100 text-sm font-medium text-neutral-600 mt-2">
+              {count} {count === 1 ? 'name' : 'names'} signed
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -86,15 +129,24 @@ export default function App() {
           </button>
         </form>
 
-        <div className="pt-6 border-t border-neutral-100">
+        <div className="pt-6 border-t border-neutral-100 grid grid-cols-2 gap-4">
           <a
             href="/api/names/download"
             className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-white text-neutral-700 border border-neutral-200 rounded-lg hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:ring-offset-2 transition-all"
             download
           >
             <Download className="w-4 h-4" />
-            Download Records (CSV)
+            Download
           </a>
+          <button
+            onClick={handleReset}
+            disabled={isResetting}
+            type="button"
+            className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-white text-red-600 border border-red-200 rounded-lg hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all disabled:opacity-50"
+          >
+            <Trash2 className="w-4 h-4" />
+            {isResetting ? 'Resetting...' : 'Reset'}
+          </button>
         </div>
       </div>
     </div>
